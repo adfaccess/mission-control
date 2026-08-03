@@ -376,17 +376,17 @@
   <p class="section-label">Active projects</p>
   <div class="grid">
 
-    <a class="card" href="#" target="_blank" rel="noopener">
+    <button class="card" type="button" onclick="openPanel('inventory')">
       <div>
         <div class="card-top">
           <span class="card-id">MOD-01</span>
-          <span class="led-wrap pending-text"><span class="led pending"></span>Link needed</span>
+          <span class="led-wrap live-text"><span class="led live"></span>Live</span>
         </div>
         <div class="card-title">Inventory Forecasting</div>
         <p class="card-desc">Forecasting model / project workspace.</p>
       </div>
-      <div class="card-footer"><span>Open</span><span class="arrow">→</span></div>
-    </a>
+      <div class="card-footer"><span>View / open</span><span class="arrow">→</span></div>
+    </button>
 
     <a class="card" href="#" target="_blank" rel="noopener">
       <div>
@@ -454,6 +454,15 @@
 
 <script>
   const processData = {
+    inventory: {
+      id: 'MOD-01',
+      title: 'Inventory Forecasting',
+      type: 'hub',
+      links: [
+        { label: 'Claude Project', href: 'https://claude.ai/project/019f6bcd-942b-7107-929c-510a45ebd276' },
+        { label: 'Live Model', href: 'https://inventory-forecasting-delta.vercel.app/' }
+      ]
+    },
     eod: {
       id: 'MOD-03',
       title: 'EOD Digest',
@@ -500,12 +509,19 @@
     const data = processData[key];
     if(!data) return;
     const panel = document.getElementById('panel');
-    panel.innerHTML = `
-      <div class="panel-top">
-        <span class="panel-id">${data.id}</span>
-        <button class="panel-close" onclick="closePanel()" aria-label="Close">✕</button>
-      </div>
-      <div class="panel-title">${data.title}</div>
+
+    let body = '';
+
+    if(data.type === 'hub'){
+      body += `
+      <div class="panel-section" style="margin-bottom:0;">
+        <h4>Open</h4>
+        ${data.links.map(l => `
+          <a class="doc-link" href="${l.href}" target="_blank" rel="noopener" style="display:flex; margin:0 0 10px;">${l.label} ↗</a>
+        `).join('')}
+      </div>`;
+    } else {
+      body += `
       <div class="panel-section">
         <h4>What this does</h4>
         <ul>${data.what.map(item => `<li>${item}</li>`).join('')}</ul>
@@ -520,7 +536,16 @@
           <code>"${data.trigger}"</code>
           <button class="copy-btn" onclick="copyTrigger(this, '${data.trigger}')">Copy</button>
         </div>
+      </div>`;
+    }
+
+    panel.innerHTML = `
+      <div class="panel-top">
+        <span class="panel-id">${data.id}</span>
+        <button class="panel-close" onclick="closePanel()" aria-label="Close">✕</button>
       </div>
+      <div class="panel-title">${data.title}</div>
+      ${body}
     `;
     document.getElementById('overlay').classList.add('open');
   }
