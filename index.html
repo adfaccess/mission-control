@@ -388,17 +388,17 @@
       <div class="card-footer"><span>View / open</span><span class="arrow">→</span></div>
     </button>
 
-    <a class="card" href="#" target="_blank" rel="noopener">
+    <button class="card" type="button" onclick="openPanel('gmailhandling')">
       <div>
         <div class="card-top">
           <span class="card-id">MOD-02</span>
-          <span class="led-wrap pending-text"><span class="led pending"></span>Link needed</span>
+          <span class="led-wrap live-text"><span class="led live"></span>Live</span>
         </div>
         <div class="card-title">Gmail Handling</div>
         <p class="card-desc">Inbox triage / email agent workspace.</p>
       </div>
-      <div class="card-footer"><span>Open</span><span class="arrow">→</span></div>
-    </a>
+      <div class="card-footer"><span>View / open</span><span class="arrow">→</span></div>
+    </button>
 
     <button class="card" type="button" onclick="openPanel('eod')">
       <div>
@@ -457,15 +457,29 @@
     inventory: {
       id: 'MOD-01',
       title: 'Inventory Forecasting',
-      type: 'hub',
       links: [
         { label: 'Claude Project', href: 'https://claude.ai/project/019f6bcd-942b-7107-929c-510a45ebd276' },
         { label: 'Live Model', href: 'https://inventory-forecasting-delta.vercel.app/' }
       ]
     },
+    gmailhandling: {
+      id: 'MOD-02',
+      title: 'Gmail Handling',
+      links: [
+        { label: 'Claude Project', href: 'https://claude.ai/project/019fc3cd-07fd-728b-9eb1-500aade4a089' }
+      ],
+      what: [
+        'Open the project using the link above',
+        'Once inside, type the trigger phrase below to have it work the Action label'
+      ],
+      trigger: 'work the ACTION label'
+    },
     eod: {
       id: 'MOD-03',
       title: 'EOD Digest',
+      links: [
+        { label: 'Claude Project', href: 'https://claude.ai/project/019fae8d-0814-735c-a84d-41c02396a408' }
+      ],
       what: [
         'Reads the team\'s EOD emails from the EOD/Inbox Gmail label',
         'Summarizes each report against the relevance rubric',
@@ -473,7 +487,7 @@
         'Emails the digest to you and files the processed threads'
       ],
       docs: [
-        { label: 'Relevance Rubric (Google Doc)', href: '#' }
+        { label: 'Relevance Rubric (Google Doc)', href: 'https://docs.google.com/document/d/1EcJt4emVkf6srbpDnGevnlI6xwdwMRxSrbMNwY2KXXo/edit' }
       ],
       trigger: 'Run the EOD digest'
     },
@@ -493,15 +507,18 @@
     scanintake: {
       id: 'MOD-05',
       title: 'Document Scan Intake',
+      links: [
+        { label: 'Claude Project', href: 'https://claude.ai/project/019f9fdb-0474-7563-a58e-b29565d76fe0' }
+      ],
       what: [
         'Checks the Scans/inbox/ Google Drive folder for new scanned mail',
         'Processes and files each document per the intake workflow',
         'Manual trigger only — nothing runs until you ask'
       ],
       docs: [
-        { label: 'Scans/inbox/ folder', href: '#' }
+        { label: 'Scans folder', href: 'https://drive.google.com/drive/folders/1EsfGOzWRRJX4H-_SsNqZQ6U0q0eMbG7K' }
       ],
-      trigger: 'Check the scan inbox'
+      trigger: 'Run the document scan'
     }
   };
 
@@ -512,24 +529,34 @@
 
     let body = '';
 
-    if(data.type === 'hub'){
+    if(data.links){
       body += `
-      <div class="panel-section" style="margin-bottom:0;">
+      <div class="panel-section">
         <h4>Open</h4>
         ${data.links.map(l => `
-          <a class="doc-link" href="${l.href}" target="_blank" rel="noopener" style="display:flex; margin:0 0 10px;">${l.label} ↗</a>
+          <a class="doc-link" href="${l.href}" target="_blank" rel="noopener" style="display:flex; margin:0 0 8px;">${l.label} ↗</a>
         `).join('')}
       </div>`;
-    } else {
+    }
+
+    if(data.what){
       body += `
       <div class="panel-section">
         <h4>What this does</h4>
         <ul>${data.what.map(item => `<li>${item}</li>`).join('')}</ul>
-      </div>
+      </div>`;
+    }
+
+    if(data.docs){
+      body += `
       <div class="panel-section">
         <h4>Context</h4>
         <p>${data.docs.map(d => `<a class="doc-link" href="${d.href}" target="_blank" rel="noopener">${d.label} ↗</a>`).join('')}</p>
-      </div>
+      </div>`;
+    }
+
+    if(data.trigger){
+      body += `
       <div class="panel-section" style="margin-bottom:0;">
         <h4>Run it</h4>
         <div class="trigger-box">
