@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mission Control</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#10141a;
+    --panel:#171d26;
+    --panel-hover:#1d2530;
+    --border:#2a333f;
+    --border-bright:#3a4656;
+    --text:#e7eaee;
+    --text-dim:#8993a3;
+    --text-faint:#5b6472;
+    --amber:#f2a93b;
+    --amber-dim:#8a6524;
+    --cyan:#4fd1c5;
+    --cyan-dim:#2f6e69;
+    --red:#e5626a;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(circle at 15% -10%, rgba(242,169,59,0.06), transparent 40%),
+      radial-gradient(circle at 85% 110%, rgba(79,209,197,0.05), transparent 45%),
+      var(--bg);
+    color:var(--text);
+    font-family:'IBM Plex Mono', monospace;
+    min-height:100vh;
+    padding:48px 32px 80px;
+  }
+  .wrap{ max-width:1080px; margin:0 auto; }
+
+  /* header */
+  .header-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    flex-wrap:wrap;
+    gap:16px;
+    padding-bottom:28px;
+    border-bottom:1px solid var(--border);
+    margin-bottom:36px;
+  }
+  .eyebrow{
+    font-size:12px;
+    letter-spacing:0.18em;
+    color:var(--amber);
+    text-transform:uppercase;
+    margin:0 0 10px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .eyebrow .dot{
+    width:6px;height:6px;border-radius:50%;
+    background:var(--amber);
+    box-shadow:0 0 8px var(--amber);
+    animation:pulse 2.2s ease-in-out infinite;
+  }
+  h1{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:700;
+    font-size:clamp(32px, 5vw, 48px);
+    letter-spacing:-0.01em;
+    margin:0;
+    line-height:1.05;
+  }
+  .status-block{
+    text-align:right;
+    font-size:12px;
+    color:var(--text-dim);
+    line-height:1.6;
+  }
+  .status-block .status-line{
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    gap:8px;
+  }
+  .status-line .led{
+    width:7px;height:7px;border-radius:50%;
+    background:var(--cyan);
+    box-shadow:0 0 6px var(--cyan);
+  }
+
+  /* section label */
+  .section-label{
+    font-size:11px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--text-faint);
+    margin:0 0 16px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .section-label::after{
+    content:'';
+    flex:1;
+    height:1px;
+    background:var(--border);
+  }
+
+  /* grid */
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(260px, 1fr));
+    gap:16px;
+    margin-bottom:40px;
+  }
+
+  .card{
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:6px;
+    padding:20px;
+    min-height:150px;
+    text-decoration:none;
+    color:var(--text);
+    transition:border-color .15s ease, background .15s ease, transform .15s ease;
+  }
+  .card:hover{
+    background:var(--panel-hover);
+    border-color:var(--border-bright);
+    transform:translateY(-2px);
+  }
+  .card:focus-visible{
+    outline:2px solid var(--amber);
+    outline-offset:2px;
+  }
+  .card-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:10px;
+  }
+  .card-id{
+    font-size:11px;
+    color:var(--text-faint);
+    letter-spacing:0.08em;
+  }
+  .led-wrap{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    font-size:10px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+  }
+  .led{
+    width:7px;height:7px;border-radius:50%;
+    flex-shrink:0;
+  }
+  .led.live{
+    background:var(--cyan);
+    box-shadow:0 0 6px var(--cyan);
+    animation:pulse 2.4s ease-in-out infinite;
+  }
+  .led.pending{
+    background:var(--amber);
+    box-shadow:0 0 6px var(--amber);
+  }
+  .led-wrap.live-text{ color:var(--cyan-dim); }
+  .led-wrap.pending-text{ color:var(--amber-dim); }
+
+  .card-title{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:19px;
+    font-weight:600;
+    margin:14px 0 6px;
+    color:var(--text);
+  }
+  .card-desc{
+    font-size:12.5px;
+    color:var(--text-dim);
+    line-height:1.5;
+    margin:0 0 14px;
+  }
+  .card-footer{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-size:11px;
+    color:var(--text-faint);
+    letter-spacing:0.05em;
+  }
+  .card-footer .arrow{
+    color:var(--text-dim);
+    transition:transform .15s ease, color .15s ease;
+  }
+  .card:hover .card-footer .arrow{
+    transform:translateX(3px);
+    color:var(--amber);
+  }
+
+  /* add-card */
+  .card.add-card{
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    border-style:dashed;
+    color:var(--text-faint);
+  }
+  .card.add-card:hover{
+    color:var(--text-dim);
+    border-color:var(--border-bright);
+  }
+  .add-card .plus{
+    font-size:22px;
+    font-family:'Space Grotesk', sans-serif;
+    margin-bottom:4px;
+  }
+
+  footer{
+    text-align:center;
+    font-size:11px;
+    color:var(--text-faint);
+    margin-top:24px;
+  }
+
+  /* type badge on cards */
+  .type-badge{
+    font-size:10px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--text-faint);
+  }
+
+  /* overlay + panel */
+  .overlay{
+    position:fixed; inset:0;
+    background:rgba(8,10,14,0.72);
+    backdrop-filter:blur(2px);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+    z-index:50;
+  }
+  .overlay.open{ display:flex; }
+  .panel{
+    width:100%;
+    max-width:480px;
+    background:var(--panel);
+    border:1px solid var(--border-bright);
+    border-radius:8px;
+    padding:26px;
+    box-shadow:0 20px 60px rgba(0,0,0,0.5);
+  }
+  .panel-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    margin-bottom:6px;
+  }
+  .panel-id{
+    font-size:11px;
+    color:var(--text-faint);
+    letter-spacing:0.08em;
+  }
+  .panel-close{
+    background:none;
+    border:none;
+    color:var(--text-dim);
+    font-size:18px;
+    cursor:pointer;
+    line-height:1;
+    padding:2px 6px;
+  }
+  .panel-close:hover{ color:var(--text); }
+  .panel-title{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:22px;
+    font-weight:600;
+    margin:6px 0 14px;
+  }
+  .panel-section{
+    margin-bottom:18px;
+  }
+  .panel-section h4{
+    font-size:10.5px;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    color:var(--text-faint);
+    margin:0 0 8px;
+  }
+  .panel-section p, .panel-section li{
+    font-size:13px;
+    color:var(--text-dim);
+    line-height:1.55;
+  }
+  .panel-section ul{
+    margin:0; padding-left:18px;
+  }
+  .doc-link{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    font-size:12.5px;
+    color:var(--cyan);
+    text-decoration:none;
+    margin-right:14px;
+  }
+  .doc-link:hover{ text-decoration:underline; }
+  .trigger-box{
+    background:var(--bg);
+    border:1px solid var(--border);
+    border-radius:5px;
+    padding:12px 14px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+  }
+  .trigger-box code{
+    font-size:13px;
+    color:var(--amber);
+  }
+  .copy-btn{
+    background:var(--panel-hover);
+    border:1px solid var(--border-bright);
+    color:var(--text);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    letter-spacing:0.04em;
+    text-transform:uppercase;
+    padding:6px 10px;
+    border-radius:4px;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .copy-btn:hover{ border-color:var(--amber); color:var(--amber); }
+  .copy-btn.copied{ border-color:var(--cyan); color:var(--cyan); }
+
+  @keyframes pulse{
+    0%, 100%{ opacity:1; }
+    50%{ opacity:0.35; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .led.live, .eyebrow .dot{ animation:none; }
+  }
+
+  @media (max-width:520px){
+    body{ padding:32px 18px 60px; }
+    .header-row{ flex-direction:column; }
+    .status-block{ text-align:left; }
+    .status-block .status-line{ justify-content:flex-start; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="header-row">
+    <div>
+      <p class="eyebrow"><span class="dot"></span>Console v1</p>
+      <h1>Mission Control</h1>
+    </div>
+    <div class="status-block">
+      <div class="status-line"><span class="led"></span>All systems reachable</div>
+      <div>5 modules configured</div>
+    </div>
+  </div>
+
+  <p class="section-label">Active projects</p>
+  <div class="grid">
+
+    <a class="card" href="#" target="_blank" rel="noopener">
+      <div>
+        <div class="card-top">
+          <span class="card-id">MOD-01</span>
+          <span class="led-wrap pending-text"><span class="led pending"></span>Link needed</span>
+        </div>
+        <div class="card-title">Inventory Forecasting</div>
+        <p class="card-desc">Forecasting model / project workspace.</p>
+      </div>
+      <div class="card-footer"><span>Open</span><span class="arrow">→</span></div>
+    </a>
+
+    <a class="card" href="#" target="_blank" rel="noopener">
+      <div>
+        <div class="card-top">
+          <span class="card-id">MOD-02</span>
+          <span class="led-wrap pending-text"><span class="led pending"></span>Link needed</span>
+        </div>
+        <div class="card-title">Gmail Handling</div>
+        <p class="card-desc">Inbox triage / email agent workspace.</p>
+      </div>
+      <div class="card-footer"><span>Open</span><span class="arrow">→</span></div>
+    </a>
+
+    <button class="card" type="button" onclick="openPanel('eod')">
+      <div>
+        <div class="card-top">
+          <span class="card-id">MOD-03</span>
+          <span class="led-wrap live-text"><span class="led live"></span>Process</span>
+        </div>
+        <div class="card-title">EOD Digest</div>
+        <p class="card-desc">Daily end-of-day report roll-up for the team.</p>
+      </div>
+      <div class="card-footer"><span>View / run</span><span class="arrow">→</span></div>
+    </button>
+
+    <button class="card" type="button" onclick="openPanel('gmailsync')">
+      <div>
+        <div class="card-top">
+          <span class="card-id">MOD-04</span>
+          <span class="led-wrap live-text"><span class="led live"></span>Process</span>
+        </div>
+        <div class="card-title">Gmail → Monday Sync</div>
+        <p class="card-desc">Moves actionable emails onto the Monday board.</p>
+      </div>
+      <div class="card-footer"><span>View / run</span><span class="arrow">→</span></div>
+    </button>
+
+    <button class="card" type="button" onclick="openPanel('scanintake')">
+      <div>
+        <div class="card-top">
+          <span class="card-id">MOD-05</span>
+          <span class="led-wrap live-text"><span class="led live"></span>Process</span>
+        </div>
+        <div class="card-title">Document Scan Intake</div>
+        <p class="card-desc">Processes scanned mail batches into the filing system.</p>
+      </div>
+      <div class="card-footer"><span>View / run</span><span class="arrow">→</span></div>
+    </button>
+
+    <a class="card add-card" href="#">
+      <div class="plus">+</div>
+      <div>Add module</div>
+    </a>
+
+  </div>
+
+  <footer>Built for quick access — no data leaves this page.</footer>
+</div>
+
+<div class="overlay" id="overlay" onclick="closePanelOnOverlay(event)">
+  <div class="panel" id="panel">
+    <!-- content injected by JS -->
+  </div>
+</div>
+
+<script>
+  const processData = {
+    eod: {
+      id: 'MOD-03',
+      title: 'EOD Digest',
+      what: [
+        'Reads the team\'s EOD emails from the EOD/Inbox Gmail label',
+        'Summarizes each report against the relevance rubric',
+        'Drafts follow-up questions where warranted',
+        'Emails the digest to you and files the processed threads'
+      ],
+      docs: [
+        { label: 'Relevance Rubric (Google Doc)', href: '#' }
+      ],
+      trigger: 'Run the EOD digest'
+    },
+    gmailsync: {
+      id: 'MOD-04',
+      title: 'Gmail → Monday Sync',
+      what: [
+        'Reads emails under the "Action" Gmail label',
+        'Creates or updates matching items on the Claude Email Management board',
+        'Uses the native Gmail connector, not Composio, per your standing preference'
+      ],
+      docs: [
+        { label: 'Claude Email Management board', href: '#' }
+      ],
+      trigger: 'Run the Gmail to Monday sync'
+    },
+    scanintake: {
+      id: 'MOD-05',
+      title: 'Document Scan Intake',
+      what: [
+        'Checks the Scans/inbox/ Google Drive folder for new scanned mail',
+        'Processes and files each document per the intake workflow',
+        'Manual trigger only — nothing runs until you ask'
+      ],
+      docs: [
+        { label: 'Scans/inbox/ folder', href: '#' }
+      ],
+      trigger: 'Check the scan inbox'
+    }
+  };
+
+  function openPanel(key){
+    const data = processData[key];
+    if(!data) return;
+    const panel = document.getElementById('panel');
+    panel.innerHTML = `
+      <div class="panel-top">
+        <span class="panel-id">${data.id}</span>
+        <button class="panel-close" onclick="closePanel()" aria-label="Close">✕</button>
+      </div>
+      <div class="panel-title">${data.title}</div>
+      <div class="panel-section">
+        <h4>What this does</h4>
+        <ul>${data.what.map(item => `<li>${item}</li>`).join('')}</ul>
+      </div>
+      <div class="panel-section">
+        <h4>Context</h4>
+        <p>${data.docs.map(d => `<a class="doc-link" href="${d.href}" target="_blank" rel="noopener">${d.label} ↗</a>`).join('')}</p>
+      </div>
+      <div class="panel-section" style="margin-bottom:0;">
+        <h4>Run it</h4>
+        <div class="trigger-box">
+          <code>"${data.trigger}"</code>
+          <button class="copy-btn" onclick="copyTrigger(this, '${data.trigger}')">Copy</button>
+        </div>
+      </div>
+    `;
+    document.getElementById('overlay').classList.add('open');
+  }
+
+  function closePanel(){
+    document.getElementById('overlay').classList.remove('open');
+  }
+
+  function closePanelOnOverlay(e){
+    if(e.target.id === 'overlay') closePanel();
+  }
+
+  function copyTrigger(btn, text){
+    navigator.clipboard.writeText(text).then(() => {
+      const original = btn.textContent;
+      btn.textContent = 'Copied';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = original;
+        btn.classList.remove('copied');
+      }, 1500);
+    });
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if(e.key === 'Escape') closePanel();
+  });
+</script>
+</body>
+</html>
